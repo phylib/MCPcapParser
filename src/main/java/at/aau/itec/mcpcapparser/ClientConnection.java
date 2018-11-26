@@ -57,7 +57,7 @@ public class ClientConnection {
             if (connectionState == ConnectionState.HANDSHAKE) {
 
                 if (packetType == 0x00) {
-                    System.out.println("Received Handshake Packet (" + i + ")");
+                    logPacket(packet, i, "Handshake", connectionState);
                     parseHandshakePacket(packet);
                 }
 
@@ -65,13 +65,13 @@ public class ClientConnection {
 
                 if (packet.isServerbound() && packetType == 0x00) {
                     // Serverbound request
-                    System.out.println("Request (" + i + ")");
+                    logPacket(packet, i, "Request", connectionState);
                 } else if (packet.isServerbound() && packetType == 0x01) {
                     // Serverbound ping
-                    System.out.println("Ping (" + i + ")");
+                    logPacket(packet, i, "Ping", connectionState);
                 } else if (!packet.isServerbound() && packetType == 0x00) {
                     // Clientbound response
-                    System.out.println("Response (" + i + ")");
+                    logPacket(packet, i, "Response", connectionState);
 
                     int stringLen = ByteBufUtils.readVarInt(packet.getPayload());
                     String response = packet.getPayload().readCharSequence(stringLen, Charset.defaultCharset()).toString();
@@ -79,7 +79,7 @@ public class ClientConnection {
 
                 } else if (!packet.isServerbound() && packetType == 0x01) {
                     // Clientbound pong
-                    System.out.println("Pong (" + i + ")");
+                    logPacket(packet, i, "Pong", connectionState);
                 }
 
             } else if (connectionState == ConnectionState.LOGIN) {
@@ -102,7 +102,13 @@ public class ClientConnection {
         } else if (nextState == 2) {
             connectionState = ConnectionState.LOGIN;
         }
-        System.out.println("Next State: " + nextState);
+    }
+
+    private void logPacket(MinecraftPacket packet, int packetNo, String packetType, ConnectionState connectionState) {
+        System.out.println(packet.getTimestamp() + "\t" + packetNo + "\t"
+                + (packet.isServerbound() ? "C->S" : "S->C") + "\t"
+                + connectionState + "\t"
+                + packetType);
     }
 
     // ------- Begin GETTER AND SETTER ---------
