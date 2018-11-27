@@ -5,8 +5,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.zip.Inflater;
@@ -123,7 +122,9 @@ public class ClientConnection {
 
     private boolean compressed = false;
     private String ip;
+    private String streamIdentifier;
     private int compressionThreshold = -1;
+    private PrintWriter writer;
 
     private byte[] serverboundCarryover = null;
     private byte[] clientboundCarryover = null;
@@ -132,8 +133,16 @@ public class ClientConnection {
 
     private ConnectionState connectionState = ConnectionState.HANDSHAKE;
 
-    public ClientConnection(String ip) {
+    public ClientConnection(String ip, String streamIdentifier) {
         this.ip = ip;
+        this.streamIdentifier = streamIdentifier;
+        try {
+            this.writer = new PrintWriter(streamIdentifier + "_parsedPackets.log", "UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
     public void addPacket(long timestamp, boolean serverbound, ByteBuf payload, long tcpSeqNo) {
@@ -344,6 +353,7 @@ public class ClientConnection {
 
         }
         System.out.println("ParsingErrors: " + parsingErrors);
+        writer.close();
     }
 
     private void eliminateDupSeqNos(List<MinecraftPacket> packetlist) {
@@ -380,7 +390,11 @@ public class ClientConnection {
     }
 
     private void logPacket(MinecraftPacket packet, int packetNo, String packetType, ConnectionState connectionState) {
-        System.out.println(packet.getTimestamp() + "\t" + packetNo + "\t"
+//        System.out.println(packet.getTimestamp() + "\t" + packetNo + "\t"
+//                + (packet.isServerbound() ? "C->S" : "S->C") + "\t"
+//                + connectionState + "\t"
+//                + packetType);
+        writer.println(packet.getTimestamp() + "\t" + packetNo + "\t"
                 + (packet.isServerbound() ? "C->S" : "S->C") + "\t"
                 + connectionState + "\t"
                 + packetType);

@@ -55,7 +55,7 @@ public class MinecraftPacketHandler implements PacketHandler {
                 String tcpIdentifier = clientIp + "-" + clientPort;
 
                 if (!clients.containsKey(tcpIdentifier)) {
-                    clients.put(tcpIdentifier, new ClientConnection(clientIp));
+                    clients.put(tcpIdentifier, new ClientConnection(clientIp, tcpIdentifier));
 //                    System.out.println("Found new client, " + clientIp);
                 }
 
@@ -91,7 +91,10 @@ public class MinecraftPacketHandler implements PacketHandler {
         }
 
         try {
-            clients.get("143.205.122.219-33138").parsePackets();
+//            clients.get("143.205.122.219-33138").parsePackets();
+            for (ClientConnection clientConnection : clients.values()) {
+                clientConnection.parsePackets();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
