@@ -125,7 +125,10 @@ public class ClientConnection {
     private String ip;
     private int compressionThreshold = -1;
 
-    private int decompressionErrors;
+    private byte[] serverboundCarryover = null;
+    private byte[] clientboundCarryover = null;
+
+    private int parsingErrors = 0;
 
     private ConnectionState connectionState = ConnectionState.HANDSHAKE;
 
@@ -133,117 +136,227 @@ public class ClientConnection {
         this.ip = ip;
     }
 
-    public void addPacket(long timestamp, boolean serverbound, ByteBuf payload) {
-        allPackets.add(new MinecraftPacket(timestamp, serverbound, payload));
+    public void addPacket(long timestamp, boolean serverbound, ByteBuf payload, long tcpSeqNo) {
         if (serverbound) {
-            this.serverbound.add(new MinecraftPacket(timestamp, serverbound, payload));
+            this.serverbound.add(new MinecraftPacket(timestamp, serverbound, payload, tcpSeqNo));
         } else {
-            this.clientbound.add(new MinecraftPacket(timestamp, serverbound, payload));
+            this.clientbound.add(new MinecraftPacket(timestamp, serverbound, payload, tcpSeqNo));
         }
     }
 
     public void parsePackets() throws IOException {
+
+        Collections.sort(clientbound, new MinecraftPacket.MinecraftPacketSeqNoComparator());
+        Collections.sort(serverbound, new MinecraftPacket.MinecraftPacketSeqNoComparator());
+        eliminateDupSeqNos(clientbound);
+        eliminateDupSeqNos(serverbound);
+        allPackets.addAll(clientbound);
+        allPackets.addAll(serverbound);
+        Collections.sort(allPackets, new MinecraftPacket.MinecraftPacketTimestampComparator());
+
         int i = -1;
         for (Iterator<MinecraftPacket> iterator = allPackets.iterator(); iterator.hasNext();) {
             MinecraftPacket packet = iterator.next();
             i++;
 
-            int size = ByteBufUtils.readVarInt(packet.getPayload());
+            // Check if event already started in last packet
+            if (packet.isServerbound() && serverboundCarryover != null) {
+                byte[] newPayload = ArrayUtils.addAll(serverboundCarryover, packet.getPayload().array());
+                ByteBuf newPayloadBuf = Unpooled.wrappedBuffer(newPayload);
+                packet.getPayload().release();
+                packet.setPayload(newPayloadBuf);
+                serverboundCarryover = null;
+            } else if (!packet.isServerbound() && clientboundCarryover != null) {
+                byte[] newPayload = ArrayUtils.addAll(clientboundCarryover, packet.getPayload().array());
+                ByteBuf newPayloadBuf = Unpooled.wrappedBuffer(newPayload);
+                packet.getPayload().release();
+                packet.setPayload(newPayloadBuf);
+                clientboundCarryover = null;
+            }
 
-            int uncompressedSize = -1;
-            int packetType = -1;
-            ByteBuf readBuffer = null;
-            if (compressed) {
-                int pointerBefore = packet.getPayload().readerIndex();
-                uncompressedSize = ByteBufUtils.readVarInt(packet.getPayload());
-                int varIntSize = packet.getPayload().readerIndex() - pointerBefore;
-
-                if (uncompressedSize > 0) {
-
-                    int len = size - varIntSize;
-                    ByteBuf compressed = packet.getPayload().readBytes(len);
-                    ByteBuf uncompressed = decompressData(compressed, len, uncompressedSize);
-                    if (uncompressed.maxCapacity() == 0) {
-                        continue;
+            // Check if multiple packets are hidden in payload
+            while (packet.getPayload().readerIndex() < packet.getPayload().maxCapacity()) {
+                boolean releaseReadBuffer = false;
+                packet.getPayload().markReaderIndex();
+                int packetStart = packet.getPayload().readerIndex();
+                int size = -1;
+                try {
+                    size = ByteBufUtils.readVarInt(packet.getPayload());
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    parsingErrors++;
+                    if (packet.isServerbound()) {
+                        serverboundCarryover = null;
+                    } else {
+                        clientboundCarryover = null;
                     }
-                    packetType = ByteBufUtils.readVarInt(uncompressed);
-                    readBuffer = uncompressed;
+                    break;
+                }
+
+                if (size < 0 || size > 10000) {
+                    if (packet.isServerbound()) {
+                        serverboundCarryover = null;
+                    } else {
+                        clientboundCarryover = null;
+                    }
+                    break;
+                }
+                int sizeVarIntLenght = packet.getPayload().readerIndex() - packetStart;
+
+                // Check if remaining payload size is to small to cover payload
+                if (size > packet.getPayload().maxCapacity() - packet.getPayload().readerIndex()) {
+                    packet.getPayload().resetReaderIndex();
+                    byte[] remainingData = new byte[packet.getPayload().maxCapacity() - packet.getPayload().readerIndex()];
+                    packet.getPayload().readBytes(remainingData);
+                    if (packet.isServerbound()) {
+                        serverboundCarryover = remainingData;
+                    } else {
+                        clientboundCarryover = remainingData;
+                    }
+                    break;
+                }
+
+                int uncompressedSize = -1;
+                int packetType = -1;
+                ByteBuf readBuffer = null;
+                if (compressed) {
+                    int pointerBefore = packet.getPayload().readerIndex();
+                    //uncompressedSize = ByteBufUtils.readVarInt(packet.getPayload());
+                    try {
+                        uncompressedSize = ByteBufUtils.readVarInt(packet.getPayload());
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        parsingErrors++;
+                        if (packet.isServerbound()) {
+                            serverboundCarryover = null;
+                        } else {
+                            clientboundCarryover = null;
+                        }
+                        break;
+                    }
+                    int varIntSize = packet.getPayload().readerIndex() - pointerBefore;
+
+                    if (uncompressedSize > 0) {
+
+                        int len = size - varIntSize;
+                        ByteBuf compressed = packet.getPayload().readBytes(len);
+                        ByteBuf uncompressed = decompressData(compressed, len, uncompressedSize);
+                        compressed.release();
+                        releaseReadBuffer = true;
+                        if (uncompressed.maxCapacity() == 0) {
+                            parsingErrors++;
+                            if (packet.isServerbound()) {
+                                serverboundCarryover = null;
+                            } else {
+                                clientboundCarryover = null;
+                            }
+                            uncompressed.release();
+                            break;
+                        }
+                        packetType = ByteBufUtils.readVarInt(uncompressed);
+                        readBuffer = uncompressed;
+
+                    } else {
+                        // If Data Length is set to zero, then the packet is uncompressed; otherwise it is the size of the uncompressed packet.
+                        packetType = ByteBufUtils.readVarInt(packet.getPayload());
+                        readBuffer = packet.getPayload();
+                    }
 
                 } else {
-                    // If Data Length is set to zero, then the packet is uncompressed; otherwise it is the size of the uncompressed packet.
                     packetType = ByteBufUtils.readVarInt(packet.getPayload());
                     readBuffer = packet.getPayload();
                 }
 
-            } else {
-                packetType = ByteBufUtils.readVarInt(packet.getPayload());
-                readBuffer = packet.getPayload();
-            }
-
-            if (connectionState == ConnectionState.HANDSHAKE) {
-
-                if (packetType == 0x00) {
-                    logPacket(packet, i, "Handshake", connectionState);
-                    parseHandshakePacket(readBuffer);
-                }
-
-            } else if (connectionState == ConnectionState.STATUS) {
-
-                if (packet.isServerbound() && packetType == 0x00) {
-                    // Serverbound request
-                    logPacket(packet, i, "Request", connectionState);
-                } else if (packet.isServerbound() && packetType == 0x01) {
-                    // Serverbound ping
-                    logPacket(packet, i, "Ping", connectionState);
-                } else if (!packet.isServerbound() && packetType == 0x00) {
-                    // Clientbound response
-                    logPacket(packet, i, "Response", connectionState);
-
-                    int stringLen = ByteBufUtils.readVarInt(packet.getPayload());
-                    String response = packet.getPayload().readCharSequence(stringLen, Charset.defaultCharset()).toString();
-                    System.out.println(response);
-
-                } else if (!packet.isServerbound() && packetType == 0x01) {
-                    // Clientbound pong
-                    logPacket(packet, i, "Pong", connectionState);
-                }
-
-            } else if (connectionState == ConnectionState.LOGIN) {
-
-                if (packet.isServerbound()) {
+                if (connectionState == ConnectionState.HANDSHAKE) {
 
                     if (packetType == 0x00) {
-                        logPacket(packet, i, "LoginStart", connectionState);
-                    } else if (packetType == 0x01) {
-                        logPacket(packet, i, "EncryptionResponse", connectionState);
+                        logPacket(packet, i, "Handshake", connectionState);
+                        parseHandshakePacket(readBuffer);
                     }
 
-                } else {
+                } else if (connectionState == ConnectionState.STATUS) {
 
-                    if (packetType == 0x00) {
-                        logPacket(packet, i, "Disconnect", connectionState);
-                    } else if (packetType == 0x01) {
-                        logPacket(packet, i, "EncryptionRequest", connectionState);
-                    } else if (packetType == 0x02) {
-                        logPacket(packet, i, "LoginSuccess", connectionState);
-                        connectionState = ConnectionState.PLAY;
-                    } else if (packetType == 0x03) {
-                        logPacket(packet, i, "SetCompression", connectionState);
-                        parseSetcompressionPacket(readBuffer);
+                    if (packet.isServerbound() && packetType == 0x00) {
+                        // Serverbound request
+                        logPacket(packet, i, "Request", connectionState);
+                    } else if (packet.isServerbound() && packetType == 0x01) {
+                        // Serverbound ping
+                        logPacket(packet, i, "Ping", connectionState);
+                    } else if (!packet.isServerbound() && packetType == 0x00) {
+                        // Clientbound response
+                        logPacket(packet, i, "Response", connectionState);
+
+                        int stringLen = ByteBufUtils.readVarInt(packet.getPayload());
+                        String response = packet.getPayload().readCharSequence(stringLen, Charset.defaultCharset()).toString();
+                        System.out.println(response);
+
+                    } else if (!packet.isServerbound() && packetType == 0x01) {
+                        // Clientbound pong
+                        logPacket(packet, i, "Pong", connectionState);
                     }
 
-                }
-            } else if (connectionState == ConnectionState.PLAY) {
+                } else if (connectionState == ConnectionState.LOGIN) {
 
-                String messageType = String.format("%02X", packetType);
-                if (CLIENTBOUND_PLAY.containsKey(packetType)) {
-                    messageType = CLIENTBOUND_PLAY.get(packetType).protocol;
-                }
-                logPacket(packet, i, messageType, connectionState);
+                    if (packet.isServerbound()) {
 
+                        if (packetType == 0x00) {
+                            logPacket(packet, i, "LoginStart", connectionState);
+                        } else if (packetType == 0x01) {
+                            logPacket(packet, i, "EncryptionResponse", connectionState);
+                        }
+
+                    } else {
+
+                        if (packetType == 0x00) {
+                            logPacket(packet, i, "Disconnect", connectionState);
+                        } else if (packetType == 0x01) {
+                            logPacket(packet, i, "EncryptionRequest", connectionState);
+                        } else if (packetType == 0x02) {
+                            logPacket(packet, i, "LoginSuccess", connectionState);
+                            connectionState = ConnectionState.PLAY;
+                        } else if (packetType == 0x03) {
+                            logPacket(packet, i, "SetCompression", connectionState);
+                            parseSetcompressionPacket(readBuffer);
+                        }
+
+                    }
+                } else if (connectionState == ConnectionState.PLAY) {
+
+                    String messageType = String.format("%02X", packetType);
+                    if (CLIENTBOUND_PLAY.containsKey(packetType)) {
+                        messageType = CLIENTBOUND_PLAY.get(packetType).protocol;
+                    }
+                    logPacket(packet, i, messageType, connectionState);
+
+                }
+
+                if (releaseReadBuffer) {
+                    // Otherwise causes exception
+                    readBuffer.release();
+                }
+
+                // Check if everything was read, if not, set ReaderIndex to correct position
+                if (packet.getPayload().readerIndex() < packetStart + size + sizeVarIntLenght) {
+                    int bytesToRead = (packetStart + size + sizeVarIntLenght) - packet.getPayload().readerIndex();
+                    packet.getPayload().readBytes(bytesToRead).release();
+                }
             }
 
         }
+        System.out.println("ParsingErrors: " + parsingErrors);
+    }
+
+    private void eliminateDupSeqNos(List<MinecraftPacket> packetlist) {
+        long lastSeq = -1;
+        for (Iterator<MinecraftPacket> iterator = packetlist.iterator(); iterator.hasNext();) {
+            MinecraftPacket p = iterator.next();
+            if (lastSeq == p.getTcpSeqNo()) {
+                iterator.remove();
+            } else {
+                lastSeq = p.getTcpSeqNo();
+            }
+        }
+
     }
 
     private void parseHandshakePacket(ByteBuf packet) throws IOException {
@@ -283,10 +396,15 @@ public class ClientConnection {
         iflr.setInput(compressedBytes);
         baos = new ByteArrayOutputStream();
         byte[] tmp = new byte[4 * 1024];
+        int counter = 0;
         try {
             while (!iflr.finished()) {
                 int size = iflr.inflate(tmp);
                 baos.write(tmp, 0, size);
+                counter++;
+                if (counter > targetLen) {
+                    throw new RuntimeException("Unzipping runs in infinite loop");
+                }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -297,10 +415,6 @@ public class ClientConnection {
             } catch (Exception ex) {
                 error = true;
             }
-        }
-
-        if (error) {
-            decompressionErrors++;
         }
 
         byte[] bytes = baos.toByteArray();

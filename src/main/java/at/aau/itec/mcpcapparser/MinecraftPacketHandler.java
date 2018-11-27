@@ -26,6 +26,7 @@ public class MinecraftPacketHandler implements PacketHandler {
         if (packet.hasProtocol(Protocol.TCP)) {
 
             TCPPacket tcpPacket = (TCPPacket) packet.getPacket(Protocol.TCP);
+
             Buffer buffer = tcpPacket.getPayload();
             //if (buffer != null && tcpPacket.getSourceIP().equals("143.205.122.57")) {
             if (buffer != null) {
@@ -52,12 +53,13 @@ public class MinecraftPacketHandler implements PacketHandler {
                 }
 
                 String tcpIdentifier = clientIp + "-" + clientPort;
+
                 if (!clients.containsKey(tcpIdentifier)) {
                     clients.put(tcpIdentifier, new ClientConnection(clientIp));
 //                    System.out.println("Found new client, " + clientIp);
                 }
 
-                clients.get(tcpIdentifier).addPacket(arrivalTime, serverbound, payloadBuffer);
+                clients.get(tcpIdentifier).addPacket(arrivalTime, serverbound, payloadBuffer, tcpPacket.getSequenceNumber());
 
 //                payloadBuffer.resetReaderIndex();
 //                MinecraftPacket p = null;
