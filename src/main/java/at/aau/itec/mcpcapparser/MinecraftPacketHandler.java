@@ -20,8 +20,6 @@ public class MinecraftPacketHandler implements PacketHandler {
 
     private HashMap<String, ClientConnection> clients = new HashMap<>();
 
-    private byte[] carryover = null;
-
     @Override
     public boolean nextPacket(Packet packet) throws IOException {
 
@@ -57,35 +55,6 @@ public class MinecraftPacketHandler implements PacketHandler {
                 if (!clients.containsKey(tcpIdentifier)) {
                     clients.put(tcpIdentifier, new ClientConnection(clientIp));
 //                    System.out.println("Found new client, " + clientIp);
-                }
-
-                int alreadyWritten = 0;
-
-                payloadBuffer.markReaderIndex();
-                int pointerStart = payloadBuffer.readerIndex();
-                int mcSize = ByteBufUtils.readVarInt(payloadBuffer);
-                int bytesOfSize = payloadBuffer.readerIndex() - pointerStart;
-                payloadBuffer.resetReaderIndex();
-
-                while (alreadyWritten + mcSize + bytesOfSize  < payload.length) {
-                    // Multiple messages in one TCP packet
-                    byte[] intermediatePacket = new byte[mcSize + bytesOfSize];
-                    payloadBuffer.readBytes(intermediatePacket);
-                    clients.get(tcpIdentifier).addPacket(arrivalTime, serverbound, Unpooled.wrappedBuffer(intermediatePacket));
-                    alreadyWritten += (mcSize + bytesOfSize);
-
-                    payloadBuffer.markReaderIndex();
-                    pointerStart = payloadBuffer.readerIndex();
-                    mcSize = ByteBufUtils.readVarInt(payloadBuffer);
-                    bytesOfSize = payloadBuffer.readerIndex() - pointerStart;
-                    payloadBuffer.resetReaderIndex();
-                }
-
-                if (mcSize + bytesOfSize + alreadyWritten > payload.length) {
-                    // messages larger than TCP payload
-                    carryover = new byte[payloadBuffer.maxCapacity() - payloadBuffer.readerIndex()];
-                    payloadBuffer.readBytes(carryover);
-                    return true;
                 }
 
                 clients.get(tcpIdentifier).addPacket(arrivalTime, serverbound, payloadBuffer);

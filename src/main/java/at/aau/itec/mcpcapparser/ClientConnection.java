@@ -144,7 +144,8 @@ public class ClientConnection {
 
     public void parsePackets() throws IOException {
         int i = -1;
-        for (MinecraftPacket packet : allPackets) {
+        for (Iterator<MinecraftPacket> iterator = allPackets.iterator(); iterator.hasNext();) {
+            MinecraftPacket packet = iterator.next();
             i++;
 
             int size = ByteBufUtils.readVarInt(packet.getPayload());
