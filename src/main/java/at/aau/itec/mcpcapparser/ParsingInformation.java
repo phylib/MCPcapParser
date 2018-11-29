@@ -16,7 +16,9 @@ public class ParsingInformation {
         STRING,
         POSITION,
         BYTE_ENUM,
-        UNSIGNED_BYTE
+        BYTE,
+        UNSIGNED_BYTE,
+        LOCATION
     }
 
     private MCDataTypes[] parsingOrder;

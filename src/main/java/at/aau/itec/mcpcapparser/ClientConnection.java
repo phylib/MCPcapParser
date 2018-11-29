@@ -39,19 +39,38 @@ public class ClientConnection {
     private static final Map<Integer, ProtolInformation> CLIENTBOUND_PLAY;
     static {
         Map<Integer, ProtolInformation> aMap = new HashMap<>();
-        aMap.put(0x00, new ProtolInformation("SpawnObject", null));
-        aMap.put(0x01, new ProtolInformation("SpawnExperienceOrb", null));
-        aMap.put(0x02, new ProtolInformation("SpawnGlobalEntity", null));
-        aMap.put(0x03, new ProtolInformation("SpawnMob", null));
+        aMap.put(0x00, new ProtolInformation("SpawnObject", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.UUID,
+                ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE,
+                ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE},
+                0, null, null, 2, 4, 3)));
+        aMap.put(0x01, new ProtolInformation("SpawnExperienceOrb", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE},
+                0, null, null, 1, 2, 3)));
+        aMap.put(0x02, new ProtolInformation("SpawnGlobalEntity", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.BYTE,
+                ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE},
+                0, null, null, 2, 4, 3)));
+        aMap.put(0x03, new ProtolInformation("SpawnMob", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.UUID, ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE},
+                0, null, null, 3, 5, 4)));
         aMap.put(0x04, new ProtolInformation("SpawnPainting", null));
         aMap.put(0x05, new ProtolInformation("SpawnPlayer", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.VARINT,
                 ParsingInformation.MCDataTypes.UUID,
                 ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE,
-                ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE}, 0, null, null, 2, 4, 3)));
+                ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE},
+                0, null, null, 2, 4, 3)));
         aMap.put(0x06, new ProtolInformation("Animation", null));
         aMap.put(0x07, new ProtolInformation("Statistics", null));
-        aMap.put(0x08, new ProtolInformation("BlockBreak", null));
+        aMap.put(0x08, new ProtolInformation("BlockBreak", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.LOCATION,
+                ParsingInformation.MCDataTypes.BYTE}, 0, null,
+                null, 1, null, null)));
         aMap.put(0x09, new ProtolInformation("UpdateBlockEntity", null));
         aMap.put(0x0a, new ProtolInformation("BlockAction", null));
         aMap.put(0x0b, new ProtolInformation("BlockChange", null));
@@ -199,6 +218,7 @@ public class ClientConnection {
         this.streamIdentifier = streamIdentifier;
         try {
             this.writer = new PrintWriter(streamIdentifier + "_parsedPackets.log", "UTF-8");
+            printCSVHeader();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -499,6 +519,10 @@ public class ClientConnection {
                 + packet.getChunkX() + "\t"
                 + packet.getChunkZ());
         parsedPackets.add(packet);
+    }
+
+    private void printCSVHeader() {
+        writer.println("Timestamp\tPacketNo\tDirection\tState\tMessageType\tPayloadInBytes\tEntityId\tx\tz\ty\tChunkX\tChunkZ");
     }
 
     private ByteBuf decompressData(ByteBuf compressed, int len, int targetLen) {

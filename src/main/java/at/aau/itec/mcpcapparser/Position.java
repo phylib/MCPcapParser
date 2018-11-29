@@ -1,12 +1,12 @@
 package at.aau.itec.mcpcapparser;
 
-public class Location {
+public class Position {
 
     private int x;
     private int z;
     private int y;
 
-    public Location(int x, int z, int y) {
+    public Position(int x, int z, int y) {
         this.x = x;
         this.z = z;
         this.y = y;
