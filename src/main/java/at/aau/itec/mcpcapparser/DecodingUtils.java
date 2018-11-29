@@ -4,6 +4,7 @@ import com.flowpowered.network.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 public class DecodingUtils {
 
@@ -33,6 +34,12 @@ public class DecodingUtils {
         return angle;
     }
 
+    public static String parseString(ByteBuf buffer) throws IOException {
+        int stringLen = ByteBufUtils.readVarInt(buffer);
+        String str = buffer.readCharSequence(stringLen, Charset.defaultCharset()).toString();
+        return str;
+    }
+
     public static void parseInformation(ByteBuf buffer, MinecraftPacket packet,  ParsingInformation information) throws IOException {
         for (int i = 0; i < information.getParsingOrder().length; i++) {
 
@@ -57,8 +64,18 @@ public class DecodingUtils {
                 case SHORT:
                     parsed = buffer.readShort();
                     break;
-                case POSITION:
+                case LOCATION:
                     parsed = decodePosition(buffer);
+                    break;
+                case BYTE:
+                    parsed = buffer.readByte();
+                    break;
+                case STRING:
+                    parsed = parseString(buffer);
+                    break;
+                case FLOAT:
+                    parsed = buffer.readFloat();
+                    break;
             }
             if (information.getEntityIdPosition() != null && information.getEntityIdPosition() == i) {
                 packet.setEntityId((Integer)parsed);
@@ -66,15 +83,18 @@ public class DecodingUtils {
                 packet.setChunkX((Integer)parsed);
             } else if (information.getChunkZPosition() != null && information.getChunkZPosition() == i) {
                 packet.setChunkZ((Integer)parsed);
-            } else if (information.getxPosition() != null && information.getxPosition() == i && information.getParsingOrder()[i].equals(ParsingInformation.MCDataTypes.DOUBLE)) {
-                packet.setBlockX((Double)parsed);
+            } else if (information.getxPosition() != null && information.getxPosition() == i && !information.getParsingOrder()[i].equals(ParsingInformation.MCDataTypes.LOCATION)) {
+                Double value = valueToDouble(parsed);
+                packet.setBlockX(value);
                 packet.setChunkX((int) Math.floor(packet.getBlockX() / 16));
-            } else if (information.getyPosition() != null && information.getyPosition() == i && information.getParsingOrder()[i].equals(ParsingInformation.MCDataTypes.DOUBLE)) {
-                packet.setBlockY((Double)parsed);
-            } else if (information.getzPosition() != null && information.getzPosition() == i && information.getParsingOrder()[i].equals(ParsingInformation.MCDataTypes.DOUBLE)) {
-                packet.setBlockZ((Double) parsed);
+            } else if (information.getyPosition() != null && information.getyPosition() == i && !information.getParsingOrder()[i].equals(ParsingInformation.MCDataTypes.LOCATION)) {
+                Double value = valueToDouble(parsed);
+                packet.setBlockY(value);
+            } else if (information.getzPosition() != null && information.getzPosition() == i && !information.getParsingOrder()[i].equals(ParsingInformation.MCDataTypes.LOCATION)) {
+                Double value = valueToDouble(parsed);
+                packet.setBlockZ(value);
                 packet.setChunkZ((int) Math.floor(packet.getBlockZ() / 16));
-            } else if (information.getxPosition() != null && information.getxPosition() == i && information.getParsingOrder()[i].equals(ParsingInformation.MCDataTypes.POSITION)) {
+            } else if (information.getxPosition() != null && information.getxPosition() == i && information.getParsingOrder()[i].equals(ParsingInformation.MCDataTypes.LOCATION)) {
                 packet.setBlockX((double) ((Position)parsed).getX());
                 packet.setBlockY((double) ((Position)parsed).getY());
                 packet.setBlockZ((double) ((Position)parsed).getZ());
@@ -83,6 +103,16 @@ public class DecodingUtils {
             }
 
         }
+    }
+
+    private static Double valueToDouble(Object parsed) {
+        Double value = null;
+        if (parsed instanceof Double) {
+            value = (Double) parsed;
+        } else if (parsed instanceof Float) {
+            value = ((Float) parsed).doubleValue();
+        }
+        return value;
     }
 
 

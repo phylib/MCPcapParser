@@ -14,11 +14,11 @@ public class ParsingInformation {
         ANGLE,
         SHORT,
         STRING,
-        POSITION,
         BYTE_ENUM,
         BYTE,
         UNSIGNED_BYTE,
-        LOCATION
+        LOCATION,
+        FLOAT
     }
 
     private MCDataTypes[] parsingOrder;

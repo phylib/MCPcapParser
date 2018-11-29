@@ -64,21 +64,34 @@ public class ClientConnection {
                 ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE,
                 ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE},
                 0, null, null, 2, 4, 3)));
-        aMap.put(0x06, new ProtolInformation("Animation", null));
+        aMap.put(0x06, new ProtolInformation("Animation", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.BYTE},
+                0, null, null, null, null, null)));
         aMap.put(0x07, new ProtolInformation("Statistics", null));
         aMap.put(0x08, new ProtolInformation("BlockBreak", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.VARINT,
                 ParsingInformation.MCDataTypes.LOCATION,
                 ParsingInformation.MCDataTypes.BYTE}, 0, null,
                 null, 1, null, null)));
-        aMap.put(0x09, new ProtolInformation("UpdateBlockEntity", null));
-        aMap.put(0x0a, new ProtolInformation("BlockAction", null));
-        aMap.put(0x0b, new ProtolInformation("BlockChange", null));
+        aMap.put(0x09, new ProtolInformation("UpdateBlockEntity", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.LOCATION,
+                ParsingInformation.MCDataTypes.BYTE}, null, null,
+                null, 0, null, null)));
+        aMap.put(0x0a, new ProtolInformation("BlockAction", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.LOCATION,
+                ParsingInformation.MCDataTypes.BYTE, ParsingInformation.MCDataTypes.BYTE, ParsingInformation.MCDataTypes.VARINT}
+                , null, null,null, 0, null, null)));
+        aMap.put(0x0b, new ProtolInformation("BlockChange", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.LOCATION}
+                , null, null,null, 0, null, null)));
         aMap.put(0x0c, new ProtolInformation("BossBar", null));
         aMap.put(0x0d, new ProtolInformation("ServerDifficulty", null));
         aMap.put(0x0e, new ProtolInformation("TabComplete", null));
         aMap.put(0x0f, new ProtolInformation("ChatMessage", null));
-        aMap.put(0x10, new ProtolInformation("Multiblock", null));
+        aMap.put(0x10, new ProtolInformation("Multiblock", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT}
+                , null, 0,1, null, null, null)));
         aMap.put(0x11, new ProtolInformation("ConfirmTransaction", null));
         aMap.put(0x12, new ProtolInformation("CloseWindow", null));
         aMap.put(0x13, new ProtolInformation("OpenWindow", null));
@@ -87,10 +100,17 @@ public class ClientConnection {
         aMap.put(0x16, new ProtolInformation("SetSlot", null));
         aMap.put(0x17, new ProtolInformation("SetCooldown", null));
         aMap.put(0x18, new ProtolInformation("PluginMessage", null));
-        aMap.put(0x19, new ProtolInformation("NamedSoundEffect", null));
+        aMap.put(0x19, new ProtolInformation("NamedSoundEffect", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.STRING, ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT}
+                , null, null,null, 2, 4, 3)));
         aMap.put(0x1a, new ProtolInformation("Disconnect", null));
-        aMap.put(0x1b, new ProtolInformation("EntityStatus", null));
-        aMap.put(0x1c, new ProtolInformation("Explosion", null));
+        aMap.put(0x1b, new ProtolInformation("EntityStatus", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.BYTE}
+                , 0, null,null, null, null, null)));
+        aMap.put(0x1c, new ProtolInformation("Explosion", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.FLOAT, ParsingInformation.MCDataTypes.FLOAT, ParsingInformation.MCDataTypes.FLOAT}
+                , null, null,null, 0, 2, 1)));
         aMap.put(0x1d, new ProtolInformation("UnloadChunk", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT},
                 null, 0, 1, null, null, null)));
@@ -99,7 +119,9 @@ public class ClientConnection {
         aMap.put(0x20, new ProtolInformation("ChunkData", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT},
                 null, 0, 1, null, null, null)));
-        aMap.put(0x21, new ProtolInformation("Effect", null));
+        aMap.put(0x21, new ProtolInformation("Effect", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.LOCATION},
+                null, null, null, 1, null, null)));
         aMap.put(0x22, new ProtolInformation("Particle", null));
         aMap.put(0x23, new ProtolInformation("JoinGame", null));
         aMap.put(0x24, new ProtolInformation("Map", null));
