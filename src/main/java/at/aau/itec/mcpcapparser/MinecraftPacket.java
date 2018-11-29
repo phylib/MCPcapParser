@@ -27,6 +27,9 @@ public class MinecraftPacket {
     private ByteBuf payload;
     private long tcpSeqNo;
 
+    private long payloadLength;
+    private String packetType;
+
     public MinecraftPacket(long timestamp, boolean serverbound, ByteBuf payload, long tcpSeqNo) {
         this.timestamp = timestamp;
         this.serverbound = serverbound;
@@ -64,5 +67,21 @@ public class MinecraftPacket {
 
     public void setTcpSeqNo(long tcpSeqNo) {
         this.tcpSeqNo = tcpSeqNo;
+    }
+
+    public long getPayloadLength() {
+        return payloadLength;
+    }
+
+    public void setPayloadLength(long payloadLength) {
+        this.payloadLength = payloadLength;
+    }
+
+    public String getPacketType() {
+        return packetType;
+    }
+
+    public void setPacketType(String packetType) {
+        this.packetType = packetType;
     }
 }

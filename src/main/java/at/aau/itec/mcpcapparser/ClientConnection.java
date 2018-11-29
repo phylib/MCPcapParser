@@ -116,6 +116,45 @@ public class ClientConnection {
         CLIENTBOUND_PLAY = Collections.unmodifiableMap(aMap);
     }
 
+    private static final Map<Integer, ProtolInformation> SERVERBOUND_PLAY;
+    static {
+        Map<Integer, ProtolInformation> aMap = new HashMap<>();
+        aMap.put(0x00, new ProtolInformation("TeleportConfirm", null));
+        aMap.put(0x01, new ProtolInformation("TabComplete", null));
+        aMap.put(0x02, new ProtolInformation("ChatMessage", null));
+        aMap.put(0x03, new ProtolInformation("ClientStatus", null));
+        aMap.put(0x04, new ProtolInformation("ClientSettings", null));
+        aMap.put(0x05, new ProtolInformation("ConfirmTransaction", null));
+        aMap.put(0x06, new ProtolInformation("EnchantItem", null));
+        aMap.put(0x07, new ProtolInformation("ClickWindow", null));
+        aMap.put(0x08, new ProtolInformation("CloseWindow", null));
+        aMap.put(0x09, new ProtolInformation("PluginMessage", null));
+        aMap.put(0x0a, new ProtolInformation("UseEntity", null));
+        aMap.put(0x0b, new ProtolInformation("KeepAlive", null));
+        aMap.put(0x0c, new ProtolInformation("Player", null));
+        aMap.put(0x0d, new ProtolInformation("PlayerPosition", null));
+        aMap.put(0x0e, new ProtolInformation("PlayerPositionAndLook", null));
+        aMap.put(0x0f, new ProtolInformation("PlayerLook", null));
+        aMap.put(0x10, new ProtolInformation("VehicleMove", null));
+        aMap.put(0x11, new ProtolInformation("SteerBoat", null));
+        aMap.put(0x12, new ProtolInformation("CraftRecipeRequest", null));
+        aMap.put(0x13, new ProtolInformation("PlayerAbilities", null));
+        aMap.put(0x14, new ProtolInformation("PlayerDigging", null));
+        aMap.put(0x15, new ProtolInformation("EntityAction", null));
+        aMap.put(0x16, new ProtolInformation("SteerVehicle", null));
+        aMap.put(0x17, new ProtolInformation("CraftingBookData", null));
+        aMap.put(0x18, new ProtolInformation("ResourcePackStatus", null));
+        aMap.put(0x19, new ProtolInformation("AdvancementTab", null));
+        aMap.put(0x1a, new ProtolInformation("HeldItemChange", null));
+        aMap.put(0x1b, new ProtolInformation("CreativeInventoryAction", null));
+        aMap.put(0x1c, new ProtolInformation("UpdateSign", null));
+        aMap.put(0x1d, new ProtolInformation("Animation", null));
+        aMap.put(0x1e, new ProtolInformation("Spectate", null));
+        aMap.put(0x1f, new ProtolInformation("PlayerBlockPlacement", null));
+        aMap.put(0x20, new ProtolInformation("UseItem", null));
+        SERVERBOUND_PLAY = Collections.unmodifiableMap(aMap);
+    }
+
     private List<MinecraftPacket> allPackets = new ArrayList<>();
     private List<MinecraftPacket> serverbound = new ArrayList<>();
     private List<MinecraftPacket> clientbound = new ArrayList<>();
@@ -224,6 +263,7 @@ public class ClientConnection {
                     }
                     break;
                 }
+                packet.setPayloadLength(size + sizeVarIntLenght);
 
                 int uncompressedSize = -1;
                 int packetType = -1;
@@ -279,7 +319,8 @@ public class ClientConnection {
                 if (connectionState == ConnectionState.HANDSHAKE) {
 
                     if (packetType == 0x00) {
-                        logPacket(packet, i, "Handshake", connectionState);
+                        packet.setPacketType("Handshake");
+                        logPacket(packet, i, connectionState);
                         parseHandshakePacket(readBuffer);
                     }
 
@@ -287,13 +328,16 @@ public class ClientConnection {
 
                     if (packet.isServerbound() && packetType == 0x00) {
                         // Serverbound request
-                        logPacket(packet, i, "Request", connectionState);
+                        packet.setPacketType("Request");
+                        logPacket(packet, i, connectionState);
                     } else if (packet.isServerbound() && packetType == 0x01) {
                         // Serverbound ping
-                        logPacket(packet, i, "Ping", connectionState);
+                        packet.setPacketType("Ping");
+                        logPacket(packet, i, connectionState);
                     } else if (!packet.isServerbound() && packetType == 0x00) {
                         // Clientbound response
-                        logPacket(packet, i, "Response", connectionState);
+                        packet.setPacketType("Response");
+                        logPacket(packet, i, connectionState);
 
                         int stringLen = ByteBufUtils.readVarInt(packet.getPayload());
                         String response = packet.getPayload().readCharSequence(stringLen, Charset.defaultCharset()).toString();
@@ -301,7 +345,8 @@ public class ClientConnection {
 
                     } else if (!packet.isServerbound() && packetType == 0x01) {
                         // Clientbound pong
-                        logPacket(packet, i, "Pong", connectionState);
+                        packet.setPacketType("Pong");
+                        logPacket(packet, i, connectionState);
                     }
 
                 } else if (connectionState == ConnectionState.LOGIN) {
@@ -309,33 +354,40 @@ public class ClientConnection {
                     if (packet.isServerbound()) {
 
                         if (packetType == 0x00) {
-                            logPacket(packet, i, "LoginStart", connectionState);
+                            packet.setPacketType("LoginStart");
+                            logPacket(packet, i, connectionState);
                         } else if (packetType == 0x01) {
-                            logPacket(packet, i, "EncryptionResponse", connectionState);
+                            packet.setPacketType("EncryptionResponse");
+                            logPacket(packet, i, connectionState);
                         }
 
                     } else {
 
                         if (packetType == 0x00) {
-                            logPacket(packet, i, "Disconnect", connectionState);
+                            packet.setPacketType("Disconnect");
+                            logPacket(packet, i, connectionState);
                         } else if (packetType == 0x01) {
-                            logPacket(packet, i, "EncryptionRequest", connectionState);
+                            packet.setPacketType("EncryptionRequest");
+                            logPacket(packet, i, connectionState);
                         } else if (packetType == 0x02) {
-                            logPacket(packet, i, "LoginSuccess", connectionState);
+                            packet.setPacketType("LoginSuccess");
+                            logPacket(packet, i, connectionState);
                             connectionState = ConnectionState.PLAY;
                         } else if (packetType == 0x03) {
-                            logPacket(packet, i, "SetCompression", connectionState);
+                            packet.setPacketType("SetCompression");
                             parseSetcompressionPacket(readBuffer);
+                            logPacket(packet, i, connectionState);
                         }
 
                     }
                 } else if (connectionState == ConnectionState.PLAY) {
 
                     String messageType = String.format("%02X", packetType);
-                    if (CLIENTBOUND_PLAY.containsKey(packetType)) {
-                        messageType = CLIENTBOUND_PLAY.get(packetType).protocol;
+                    Map<Integer, ProtolInformation> protocolInfo = packet.isServerbound() ? SERVERBOUND_PLAY : CLIENTBOUND_PLAY;
+                    if (protocolInfo.containsKey(packetType)) {
+                        packet.setPacketType(protocolInfo.get(packetType).protocol);
                     }
-                    logPacket(packet, i, messageType, connectionState);
+                    logPacket(packet, i, connectionState);
 
                 }
 
@@ -389,7 +441,7 @@ public class ClientConnection {
         compressionThreshold = threshold;
     }
 
-    private void logPacket(MinecraftPacket packet, int packetNo, String packetType, ConnectionState connectionState) {
+    private void logPacket(MinecraftPacket packet, int packetNo, ConnectionState connectionState) {
 //        System.out.println(packet.getTimestamp() + "\t" + packetNo + "\t"
 //                + (packet.isServerbound() ? "C->S" : "S->C") + "\t"
 //                + connectionState + "\t"
@@ -397,7 +449,8 @@ public class ClientConnection {
         writer.println(packet.getTimestamp() + "\t" + packetNo + "\t"
                 + (packet.isServerbound() ? "C->S" : "S->C") + "\t"
                 + connectionState + "\t"
-                + packetType);
+                + packet.getPacketType() + "\t"
+                + packet.getPayloadLength());
     }
 
     private ByteBuf decompressData(ByteBuf compressed, int len, int targetLen) {
