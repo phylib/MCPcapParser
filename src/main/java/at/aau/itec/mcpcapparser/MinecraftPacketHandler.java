@@ -13,6 +13,12 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.io.IOException;
 import java.util.HashMap;
 
+/**
+ * This handler extracts TCP packets from a PCAP file and creates a <code>ClientConnection</code> for each
+ * TCP stream (IP-Adresse, Port combination).
+ *
+ * @see ClientConnection
+ */
 public class MinecraftPacketHandler implements PacketHandler {
 
     private static final String SERVER_IP = "143.205.122.57";

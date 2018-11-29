@@ -10,6 +10,12 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.zip.Inflater;
 
+/**
+ * The real magic occurs here. This class holds a list of clientbound packets and one of all serverbound packets. The
+ * the <code>parsePackets</code> method combines these methods and parses the Minecraft specific information out
+ * of the packets. After the parsing method is called, all parsed packets are stored in the <code>parsedPackets</code>
+ * list. The packets then contain entity, as well as spatial information.
+ */
 public class ClientConnection {
 
     public enum ConnectionState {
@@ -155,9 +161,9 @@ public class ClientConnection {
         SERVERBOUND_PLAY = Collections.unmodifiableMap(aMap);
     }
 
-    private List<MinecraftPacket> allPackets = new ArrayList<>();
     private List<MinecraftPacket> serverbound = new ArrayList<>();
     private List<MinecraftPacket> clientbound = new ArrayList<>();
+    private List<MinecraftPacket> parsedPackets = new ArrayList<>();
 
     private boolean compressed = false;
     private String ip;
@@ -198,9 +204,11 @@ public class ClientConnection {
         Collections.sort(serverbound, new MinecraftPacket.MinecraftPacketSeqNoComparator());
         eliminateDupSeqNos(clientbound);
         eliminateDupSeqNos(serverbound);
+        List<MinecraftPacket> allPackets = new ArrayList<>();
         allPackets.addAll(clientbound);
         allPackets.addAll(serverbound);
         Collections.sort(allPackets, new MinecraftPacket.MinecraftPacketTimestampComparator());
+        parsedPackets.clear();
 
         int i = -1;
         for (Iterator<MinecraftPacket> iterator = allPackets.iterator(); iterator.hasNext();) {
@@ -320,7 +328,7 @@ public class ClientConnection {
 
                     if (packetType == 0x00) {
                         packet.setPacketType("Handshake");
-                        logPacket(packet, i, connectionState);
+                        storeAndLogParsedPacket(packet, i, connectionState);
                         parseHandshakePacket(readBuffer);
                     }
 
@@ -329,15 +337,15 @@ public class ClientConnection {
                     if (packet.isServerbound() && packetType == 0x00) {
                         // Serverbound request
                         packet.setPacketType("Request");
-                        logPacket(packet, i, connectionState);
+                        storeAndLogParsedPacket(packet, i, connectionState);
                     } else if (packet.isServerbound() && packetType == 0x01) {
                         // Serverbound ping
                         packet.setPacketType("Ping");
-                        logPacket(packet, i, connectionState);
+                        storeAndLogParsedPacket(packet, i, connectionState);
                     } else if (!packet.isServerbound() && packetType == 0x00) {
                         // Clientbound response
                         packet.setPacketType("Response");
-                        logPacket(packet, i, connectionState);
+                        storeAndLogParsedPacket(packet, i, connectionState);
 
                         int stringLen = ByteBufUtils.readVarInt(packet.getPayload());
                         String response = packet.getPayload().readCharSequence(stringLen, Charset.defaultCharset()).toString();
@@ -346,7 +354,7 @@ public class ClientConnection {
                     } else if (!packet.isServerbound() && packetType == 0x01) {
                         // Clientbound pong
                         packet.setPacketType("Pong");
-                        logPacket(packet, i, connectionState);
+                        storeAndLogParsedPacket(packet, i, connectionState);
                     }
 
                 } else if (connectionState == ConnectionState.LOGIN) {
@@ -355,28 +363,28 @@ public class ClientConnection {
 
                         if (packetType == 0x00) {
                             packet.setPacketType("LoginStart");
-                            logPacket(packet, i, connectionState);
+                            storeAndLogParsedPacket(packet, i, connectionState);
                         } else if (packetType == 0x01) {
                             packet.setPacketType("EncryptionResponse");
-                            logPacket(packet, i, connectionState);
+                            storeAndLogParsedPacket(packet, i, connectionState);
                         }
 
                     } else {
 
                         if (packetType == 0x00) {
                             packet.setPacketType("Disconnect");
-                            logPacket(packet, i, connectionState);
+                            storeAndLogParsedPacket(packet, i, connectionState);
                         } else if (packetType == 0x01) {
                             packet.setPacketType("EncryptionRequest");
-                            logPacket(packet, i, connectionState);
+                            storeAndLogParsedPacket(packet, i, connectionState);
                         } else if (packetType == 0x02) {
                             packet.setPacketType("LoginSuccess");
-                            logPacket(packet, i, connectionState);
+                            storeAndLogParsedPacket(packet, i, connectionState);
                             connectionState = ConnectionState.PLAY;
                         } else if (packetType == 0x03) {
                             packet.setPacketType("SetCompression");
                             parseSetcompressionPacket(readBuffer);
-                            logPacket(packet, i, connectionState);
+                            storeAndLogParsedPacket(packet, i, connectionState);
                         }
 
                     }
@@ -387,7 +395,7 @@ public class ClientConnection {
                     if (protocolInfo.containsKey(packetType)) {
                         packet.setPacketType(protocolInfo.get(packetType).protocol);
                     }
-                    logPacket(packet, i, connectionState);
+                    storeAndLogParsedPacket(packet, i, connectionState);
 
                 }
 
@@ -441,16 +449,18 @@ public class ClientConnection {
         compressionThreshold = threshold;
     }
 
-    private void logPacket(MinecraftPacket packet, int packetNo, ConnectionState connectionState) {
+    private void storeAndLogParsedPacket(MinecraftPacket packet, int packetNo, ConnectionState connectionState) {
 //        System.out.println(packet.getTimestamp() + "\t" + packetNo + "\t"
 //                + (packet.isServerbound() ? "C->S" : "S->C") + "\t"
 //                + connectionState + "\t"
 //                + packetType);
-        writer.println(packet.getTimestamp() + "\t" + packetNo + "\t"
+        packet.setPacketNo(packetNo);
+        writer.println(packet.getTimestamp() + "\t" + packet.getPacketNo() + "\t"
                 + (packet.isServerbound() ? "C->S" : "S->C") + "\t"
                 + connectionState + "\t"
                 + packet.getPacketType() + "\t"
                 + packet.getPayloadLength());
+        parsedPackets.add(packet);
     }
 
     private ByteBuf decompressData(ByteBuf compressed, int len, int targetLen) {
