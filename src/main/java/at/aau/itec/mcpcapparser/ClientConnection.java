@@ -27,12 +27,12 @@ public class ClientConnection {
     }
 
     private static class ProtolInformation {
-        String protocol;
-        String parsingMethod;
+        public String protocol;
+        public ParsingInformation parsingInformation;
 
-        public ProtolInformation(String protocol, String parsingMethod) {
+        public ProtolInformation(String protocol, ParsingInformation parsingInformation) {
             this.protocol = protocol;
-            this.parsingMethod = parsingMethod;
+            this.parsingInformation = parsingInformation;
         }
     }
 
@@ -44,7 +44,11 @@ public class ClientConnection {
         aMap.put(0x02, new ProtolInformation("SpawnGlobalEntity", null));
         aMap.put(0x03, new ProtolInformation("SpawnMob", null));
         aMap.put(0x04, new ProtolInformation("SpawnPainting", null));
-        aMap.put(0x05, new ProtolInformation("SpawnPlayer", null));
+        aMap.put(0x05, new ProtolInformation("SpawnPlayer", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.UUID,
+                ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE,
+                ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE}, 0, null, null, 2, 4, 3)));
         aMap.put(0x06, new ProtolInformation("Animation", null));
         aMap.put(0x07, new ProtolInformation("Statistics", null));
         aMap.put(0x08, new ProtolInformation("BlockBreak", null));
@@ -68,18 +72,30 @@ public class ClientConnection {
         aMap.put(0x1a, new ProtolInformation("Disconnect", null));
         aMap.put(0x1b, new ProtolInformation("EntityStatus", null));
         aMap.put(0x1c, new ProtolInformation("Explosion", null));
-        aMap.put(0x1d, new ProtolInformation("UnloadChunk", null));
+        aMap.put(0x1d, new ProtolInformation("UnloadChunk", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT},
+                null, 0, 1, null, null, null)));
         aMap.put(0x1e, new ProtolInformation("ChangeGameState", null));
         aMap.put(0x1f, new ProtolInformation("KeepAlive", null));
-        aMap.put(0x20, new ProtolInformation("ChunkData", null));
+        aMap.put(0x20, new ProtolInformation("ChunkData", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT},
+                null, 0, 1, null, null, null)));
         aMap.put(0x21, new ProtolInformation("Effect", null));
         aMap.put(0x22, new ProtolInformation("Particle", null));
         aMap.put(0x23, new ProtolInformation("JoinGame", null));
         aMap.put(0x24, new ProtolInformation("Map", null));
-        aMap.put(0x25, new ProtolInformation("Entity", null));
-        aMap.put(0x26, new ProtolInformation("EntityRelativeMove", null));
-        aMap.put(0x27, new ProtolInformation("EntityLookAndRelativeMove", null));
-        aMap.put(0x28, new ProtolInformation("EntityLook", null));
+        aMap.put(0x25, new ProtolInformation("Entity", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT},
+                0, null, null, null, null, null)));
+        aMap.put(0x26, new ProtolInformation("EntityRelativeMove", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.SHORT, ParsingInformation.MCDataTypes.SHORT, ParsingInformation.MCDataTypes.SHORT},
+                0, null, null, null, null, null)));
+        aMap.put(0x27, new ProtolInformation("EntityLookAndRelativeMove", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.SHORT, ParsingInformation.MCDataTypes.SHORT, ParsingInformation.MCDataTypes.SHORT, ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE},
+                0, null, null, null, null, null)));
+        aMap.put(0x28, new ProtolInformation("EntityLook", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE},
+                0, null, null, null, null, null)));
         aMap.put(0x29, new ProtolInformation("VehicleMove", null));
         aMap.put(0x2a, new ProtolInformation("OpenSignEditor", null));
         aMap.put(0x2b, new ProtolInformation("CraftRecipe", null));
@@ -390,12 +406,28 @@ public class ClientConnection {
                     }
                 } else if (connectionState == ConnectionState.PLAY) {
 
-                    String messageType = String.format("%02X", packetType);
                     Map<Integer, ProtolInformation> protocolInfo = packet.isServerbound() ? SERVERBOUND_PLAY : CLIENTBOUND_PLAY;
                     if (protocolInfo.containsKey(packetType)) {
-                        packet.setPacketType(protocolInfo.get(packetType).protocol);
+                        ProtolInformation protocol = protocolInfo.get(packetType);
+                        packet.setPacketType(protocol.protocol);
+                        if (protocol.parsingInformation != null) {
+                            MinecraftPacket parsedPacket = new MinecraftPacket(packet.getTimestamp(), packet.isServerbound(), packet.getPayload(), packet.getTcpSeqNo());
+                            parsedPacket.setPacketNo(i);
+                            parsedPacket.setPacketType(packet.getPacketType());
+                            DecodingUtils.parseInformation(readBuffer, parsedPacket, protocol.parsingInformation);
+                            storeAndLogParsedPacket(parsedPacket, i, connectionState);
+
+                        } else {
+
+                            storeAndLogParsedPacket(packet, i, connectionState);
+
+                        }
+
+                    } else {
+                        packet.setPacketType(String.format("%02X", packetType));
+                        storeAndLogParsedPacket(packet, i, connectionState);
                     }
-                    storeAndLogParsedPacket(packet, i, connectionState);
+
 
                 }
 
@@ -459,7 +491,13 @@ public class ClientConnection {
                 + (packet.isServerbound() ? "C->S" : "S->C") + "\t"
                 + connectionState + "\t"
                 + packet.getPacketType() + "\t"
-                + packet.getPayloadLength());
+                + packet.getPayloadLength() + "\t"
+                + packet.getEntityId() + "\t"
+                + packet.getBlockX() + "\t"
+                + packet.getBlockZ() + "\t"
+                + packet.getBlockY() + "\t"
+                + packet.getChunkX() + "\t"
+                + packet.getChunkZ());
         parsedPackets.add(packet);
     }
 

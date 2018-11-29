@@ -34,9 +34,9 @@ public class MinecraftPacket {
     private Integer entityId;
     private Integer chunkX;
     private Integer chunkZ;
-    private Integer blockX;
-    private Integer blockZ;
-    private Integer blockY;
+    private Double blockX;
+    private Double blockZ;
+    private Double blockY;
 
     public MinecraftPacket(long timestamp, boolean serverbound, ByteBuf payload, long tcpSeqNo) {
         this.timestamp = timestamp;
@@ -117,35 +117,35 @@ public class MinecraftPacket {
         this.chunkZ = chunkZ;
     }
 
-    public Integer getBlockX() {
-        return blockX;
-    }
-
-    public void setBlockX(Integer blockX) {
-        this.blockX = blockX;
-    }
-
-    public Integer getBlockZ() {
-        return blockZ;
-    }
-
-    public void setBlockZ(Integer blockZ) {
-        this.blockZ = blockZ;
-    }
-
-    public Integer getBlockY() {
-        return blockY;
-    }
-
-    public void setBlockY(Integer blockY) {
-        this.blockY = blockY;
-    }
-
     public long getPacketNo() {
         return packetNo;
     }
 
     public void setPacketNo(long packetNo) {
         this.packetNo = packetNo;
+    }
+
+    public Double getBlockX() {
+        return blockX;
+    }
+
+    public void setBlockX(Double blockX) {
+        this.blockX = blockX;
+    }
+
+    public Double getBlockZ() {
+        return blockZ;
+    }
+
+    public void setBlockZ(Double blockZ) {
+        this.blockZ = blockZ;
+    }
+
+    public Double getBlockY() {
+        return blockY;
+    }
+
+    public void setBlockY(Double blockY) {
+        this.blockY = blockY;
     }
 }
