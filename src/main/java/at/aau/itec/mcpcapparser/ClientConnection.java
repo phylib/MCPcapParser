@@ -122,8 +122,13 @@ public class ClientConnection {
         aMap.put(0x21, new ProtolInformation("Effect", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.LOCATION},
                 null, null, null, 1, null, null)));
-        aMap.put(0x22, new ProtolInformation("Particle", null));
-        aMap.put(0x23, new ProtolInformation("JoinGame", null));
+        aMap.put(0x22, new ProtolInformation("Particle", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.BOOL,
+                ParsingInformation.MCDataTypes.FLOAT, ParsingInformation.MCDataTypes.FLOAT, ParsingInformation.MCDataTypes.FLOAT},
+                null, null, null, 2, 4, 3)));
+        aMap.put(0x23, new ProtolInformation("JoinGame", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT},
+                0, null, null, null, null, null)));
         aMap.put(0x24, new ProtolInformation("Map", null));
         aMap.put(0x25, new ProtolInformation("Entity", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.VARINT},
@@ -143,39 +148,65 @@ public class ClientConnection {
         aMap.put(0x2c, new ProtolInformation("PlayerAbilities", null));
         aMap.put(0x2d, new ProtolInformation("CombatEvent", null));
         aMap.put(0x2e, new ProtolInformation("PlayerListItem", null));
-        aMap.put(0x2f, new ProtolInformation("PlayerPositionAndLook", null));
-        aMap.put(0x30, new ProtolInformation("UseBed", null));
+        aMap.put(0x2f, new ProtolInformation("PlayerPositionAndLook", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE},
+                0, null, null, null, null, null)));
+        aMap.put(0x30, new ProtolInformation("UseBed", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.LOCATION},
+                0, null, null, 1, null, null)));
         aMap.put(0x31, new ProtolInformation("UnlockRecipies", null));
         aMap.put(0x32, new ProtolInformation("DestroyEntities", null));
         aMap.put(0x33, new ProtolInformation("RemoveEntityEffect", null));
         aMap.put(0x34, new ProtolInformation("ResourcePackSend", null));
         aMap.put(0x35, new ProtolInformation("Respawn", null));
-        aMap.put(0x36, new ProtolInformation("EntityHeadLook", null));
+        aMap.put(0x36, new ProtolInformation("EntityHeadLook", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT},
+                0, null, null, null, null, null)));
         aMap.put(0x37, new ProtolInformation("SelectAdvancementTab", null));
         aMap.put(0x38, new ProtolInformation("WorldBorder", null));
         aMap.put(0x39, new ProtolInformation("Camera", null));
         aMap.put(0x3a, new ProtolInformation("HeldItemChange", null));
         aMap.put(0x3b, new ProtolInformation("DisplayScoreboard", null));
-        aMap.put(0x3c, new ProtolInformation("EntityMetadata", null));
+        aMap.put(0x3c, new ProtolInformation("EntityMetadata", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT},
+                0, null, null, null, null, null)));
         aMap.put(0x3d, new ProtolInformation("AttachEntity", null));
-        aMap.put(0x3e, new ProtolInformation("EntityVelocity", null));
-        aMap.put(0x3f, new ProtolInformation("EntityEquipment", null));
+        aMap.put(0x3e, new ProtolInformation("EntityVelocity", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT},
+                0, null, null, null, null, null)));
+        aMap.put(0x3f, new ProtolInformation("EntityEquipment", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT},
+                0, null, null, null, null, null)));
         aMap.put(0x40, new ProtolInformation("SetExperience", null));
         aMap.put(0x41, new ProtolInformation("UpdateHealth", null));
         aMap.put(0x42, new ProtolInformation("ScoreboardObjective", null));
         aMap.put(0x43, new ProtolInformation("SetPassenger", null));
         aMap.put(0x44, new ProtolInformation("Teams", null));
         aMap.put(0x45, new ProtolInformation("UpdateScore", null));
-        aMap.put(0x46, new ProtolInformation("SpawnPosition", null));
+        aMap.put(0x46, new ProtolInformation("SpawnPosition", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.LOCATION},
+                null, null, null, 0, null, null)));
         aMap.put(0x47, new ProtolInformation("TimeUpdate", null));
         aMap.put(0x48, new ProtolInformation("Title", null));
-        aMap.put(0x49, new ProtolInformation("SoundEffect", null));
+        aMap.put(0x49, new ProtolInformation("SoundEffect", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT},
+                null, null, null, 2, 4, 3)));
         aMap.put(0x4a, new ProtolInformation("PlayerListHeaderAndFooter", null));
-        aMap.put(0x4b, new ProtolInformation("CollectItem", null));
-        aMap.put(0x4c, new ProtolInformation("EnttiyTeleport", null));
+        aMap.put(0x4b, new ProtolInformation("CollectItem", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.VARINT},
+                1, null, null, null, null, null)));
+        aMap.put(0x4c, new ProtolInformation("EnttiyTeleport", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT,
+                ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE},
+                0, null, null, 1, 3, 2)));
         aMap.put(0x4d, new ProtolInformation("Advancements", null));
-        aMap.put(0x4e, new ProtolInformation("EntityProperties", null));
-        aMap.put(0x4f, new ProtolInformation("EntityEffect", null));
+        aMap.put(0x4e, new ProtolInformation("EntityProperties", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT},
+                0, null, null, null, null, null)));
+        aMap.put(0x4f, new ProtolInformation("EntityEffect", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
+                ParsingInformation.MCDataTypes.VARINT},
+                0, null, null, null, null, null)));
         CLIENTBOUND_PLAY = Collections.unmodifiableMap(aMap);
     }
 
@@ -456,6 +487,7 @@ public class ClientConnection {
                             MinecraftPacket parsedPacket = new MinecraftPacket(packet.getTimestamp(), packet.isServerbound(), packet.getPayload(), packet.getTcpSeqNo());
                             parsedPacket.setPacketNo(i);
                             parsedPacket.setPacketType(packet.getPacketType());
+                            parsedPacket.setPayloadLength(packet.getPayloadLength());
                             DecodingUtils.parseInformation(readBuffer, parsedPacket, protocol.parsingInformation);
                             storeAndLogParsedPacket(parsedPacket, i, connectionState);
 
@@ -534,12 +566,12 @@ public class ClientConnection {
                 + connectionState + "\t"
                 + packet.getPacketType() + "\t"
                 + packet.getPayloadLength() + "\t"
-                + packet.getEntityId() + "\t"
-                + packet.getBlockX() + "\t"
-                + packet.getBlockZ() + "\t"
-                + packet.getBlockY() + "\t"
-                + packet.getChunkX() + "\t"
-                + packet.getChunkZ());
+                + Objects.toString(packet.getEntityId(), "") + "\t"
+                + Objects.toString(packet.getBlockX(), "") + "\t"
+                + Objects.toString(packet.getBlockZ()) + "\t"
+                + Objects.toString(packet.getBlockY(), "") + "\t"
+                + Objects.toString(packet.getChunkX(), null) + "\t"
+                + Objects.toString(packet.getChunkZ(), null));
         parsedPackets.add(packet);
     }
 

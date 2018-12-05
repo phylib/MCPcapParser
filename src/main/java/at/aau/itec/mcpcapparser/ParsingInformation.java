@@ -18,7 +18,9 @@ public class ParsingInformation {
         BYTE,
         UNSIGNED_BYTE,
         LOCATION,
-        FLOAT
+        FLOAT,
+        LONG,
+        BOOL
     }
 
     private MCDataTypes[] parsingOrder;

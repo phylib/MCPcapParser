@@ -76,9 +76,15 @@ public class DecodingUtils {
                 case FLOAT:
                     parsed = buffer.readFloat();
                     break;
+                case LONG:
+                    parsed = buffer.readLong();
+                    break;
+                case BOOL:
+                    parsed = buffer.readByte();
+                    break;
             }
             if (information.getEntityIdPosition() != null && information.getEntityIdPosition() == i) {
-                packet.setEntityId((Integer)parsed);
+                packet.setEntityId((Integer) parsed);
             } else if (information.getChunkXPosition() != null && information.getChunkXPosition() == i) {
                 packet.setChunkX((Integer)parsed);
             } else if (information.getChunkZPosition() != null && information.getChunkZPosition() == i) {
@@ -111,6 +117,8 @@ public class DecodingUtils {
             value = (Double) parsed;
         } else if (parsed instanceof Float) {
             value = ((Float) parsed).doubleValue();
+        } else if (parsed instanceof Integer) {
+            value = ((Integer) parsed).doubleValue();
         }
         return value;
     }
