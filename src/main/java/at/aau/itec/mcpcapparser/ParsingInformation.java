@@ -20,7 +20,8 @@ public class ParsingInformation {
         LOCATION,
         FLOAT,
         LONG,
-        BOOL
+        BOOL,
+        EFFECT_POSTION
     }
 
     private MCDataTypes[] parsingOrder;
@@ -30,6 +31,7 @@ public class ParsingInformation {
     private Integer xPosition;
     private Integer zPosition;
     private Integer yPosition;
+    private Integer objectType;
 
     public ParsingInformation(MCDataTypes[] parsingOrder, Integer entityIdPosition, Integer chunkXPosition, Integer chunkZPosition, Integer xPosition, Integer zPosition, Integer yPosition) {
         this.parsingOrder = parsingOrder;
@@ -39,6 +41,17 @@ public class ParsingInformation {
         this.xPosition = xPosition;
         this.zPosition = zPosition;
         this.yPosition = yPosition;
+    }
+
+    public ParsingInformation(MCDataTypes[] parsingOrder, Integer entityIdPosition, Integer chunkXPosition, Integer chunkZPosition, Integer xPosition, Integer zPosition, Integer yPosition, Integer objectType) {
+        this.parsingOrder = parsingOrder;
+        this.entityIdPosition = entityIdPosition;
+        this.chunkXPosition = chunkXPosition;
+        this.chunkZPosition = chunkZPosition;
+        this.xPosition = xPosition;
+        this.zPosition = zPosition;
+        this.yPosition = yPosition;
+        this.objectType = objectType;
     }
 
     public MCDataTypes[] getParsingOrder() {
@@ -95,5 +108,13 @@ public class ParsingInformation {
 
     public void setyPosition(Integer yPosition) {
         this.yPosition = yPosition;
+    }
+
+    public Integer getObjectType() {
+        return objectType;
+    }
+
+    public void setObjectType(Integer objectType) {
+        this.objectType = objectType;
     }
 }

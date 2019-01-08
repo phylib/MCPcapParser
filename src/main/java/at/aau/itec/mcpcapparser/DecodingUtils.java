@@ -82,6 +82,10 @@ public class DecodingUtils {
                 case BOOL:
                     parsed = buffer.readByte();
                     break;
+                case EFFECT_POSTION:
+                    int pos = buffer.readInt();
+                    parsed = pos / 8.;
+                    break;
             }
             if (information.getEntityIdPosition() != null && information.getEntityIdPosition() == i) {
                 packet.setEntityId((Integer) parsed);
@@ -106,6 +110,9 @@ public class DecodingUtils {
                 packet.setBlockZ((double) ((Position)parsed).getZ());
                 packet.setChunkX((int) Math.floor(((Position)parsed).getX() / 16));
                 packet.setChunkZ((int) Math.floor(((Position)parsed).getZ() / 16));
+            } else if (information.getObjectType() != null && information.getObjectType() == i) {
+                String objectType = byteObjectTypeToString((Byte) parsed);
+                packet.setEntityType(objectType);
             }
 
         }
@@ -121,6 +128,67 @@ public class DecodingUtils {
             value = ((Integer) parsed).doubleValue();
         }
         return value;
+    }
+
+
+    private static String byteObjectTypeToString(byte objectType) {
+        switch (objectType) {
+            case 1:
+                return "Boat";
+            case 2:
+                return "Item";
+            case 3:
+                return "Cloud";
+            case 10:
+                return "Minecart";
+            case 50:
+                return "TNT";
+            case 51:
+                return "EnderCrystal";
+            case 60:
+                return "Arrow (projectile)";
+            case 61:
+                return "Snowball (projectile)";
+            case 62:
+                return "Egg (projectile)";
+            case 63:
+                return "Fireball (projectile)";
+            case 64:
+                return "FireCharge (projectile)";
+            case 65:
+                return "EnderPearle (projectile)";
+            case 66:
+                return "WitherSkull (projectile)";
+            case 67:
+                return "ShulkerBullet (projectile)";
+            case 70:
+                return "FallingObject";
+            case 71:
+                return "ItemFrames";
+            case 72:
+                return "EyeOfEnder";
+            case 73:
+                return "Potion (projectile)";
+            case 75:
+                return "ThrownExpBottle (projectile)";
+            case 76:
+                return "FireworkRocket (projectile)";
+            case 77:
+                return "LeashKnot";
+            case 78:
+                return "ArmorStand";
+            case 79:
+                return "EvocationFangs";
+            case 90:
+                return "FishingHook";
+            case 91:
+                return "SpectralArrow (projectile)";
+            case 93:
+                return "DragonFireboall (projectile)";
+            case 94:
+                return "Trident";
+        }
+        return "Object";
     }
 
 

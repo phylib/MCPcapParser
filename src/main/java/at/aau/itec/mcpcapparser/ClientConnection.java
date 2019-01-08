@@ -42,9 +42,10 @@ public class ClientConnection {
         aMap.put(0x00, new ProtolInformation("SpawnObject", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.VARINT,
                 ParsingInformation.MCDataTypes.UUID,
+                ParsingInformation.MCDataTypes.BYTE,
                 ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE,
                 ParsingInformation.MCDataTypes.ANGLE, ParsingInformation.MCDataTypes.ANGLE},
-                0, null, null, 2, 4, 3)));
+                0, null, null, 3, 5, 4, 2)));
         aMap.put(0x01, new ProtolInformation("SpawnExperienceOrb", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.VARINT,
                 ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE, ParsingInformation.MCDataTypes.DOUBLE},
@@ -190,7 +191,7 @@ public class ClientConnection {
         aMap.put(0x48, new ProtolInformation("Title", null));
         aMap.put(0x49, new ProtolInformation("SoundEffect", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
                 ParsingInformation.MCDataTypes.VARINT, ParsingInformation.MCDataTypes.VARINT,
-                ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT, ParsingInformation.MCDataTypes.INT},
+                ParsingInformation.MCDataTypes.EFFECT_POSTION, ParsingInformation.MCDataTypes.EFFECT_POSTION, ParsingInformation.MCDataTypes.EFFECT_POSTION},
                 null, null, null, 2, 4, 3)));
         aMap.put(0x4a, new ProtolInformation("PlayerListHeaderAndFooter", null));
         aMap.put(0x4b, new ProtolInformation("CollectItem", new ParsingInformation(new ParsingInformation.MCDataTypes[]{
@@ -571,12 +572,13 @@ public class ClientConnection {
                 + Objects.toString(packet.getBlockZ()) + "\t"
                 + Objects.toString(packet.getBlockY(), "") + "\t"
                 + Objects.toString(packet.getChunkX(), null) + "\t"
-                + Objects.toString(packet.getChunkZ(), null));
+                + Objects.toString(packet.getChunkZ(), null) + "\t"
+                + Objects.toString(packet.getEntityType()));
         parsedPackets.add(packet);
     }
 
     private void printCSVHeader() {
-        writer.println("Timestamp\tPacketNo\tDirection\tState\tMessageType\tPayloadInBytes\tEntityId\tx\tz\ty\tChunkX\tChunkZ");
+        writer.println("Timestamp\tPacketNo\tDirection\tState\tMessageType\tPayloadInBytes\tEntityId\tx\tz\ty\tChunkX\tChunkZ\tEntityType");
     }
 
     private ByteBuf decompressData(ByteBuf compressed, int len, int targetLen) {

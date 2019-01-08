@@ -37,6 +37,7 @@ public class MinecraftPacket {
     private Double blockX;
     private Double blockZ;
     private Double blockY;
+    private String entityType;
 
     public MinecraftPacket(long timestamp, boolean serverbound, ByteBuf payload, long tcpSeqNo) {
         this.timestamp = timestamp;
@@ -147,5 +148,13 @@ public class MinecraftPacket {
 
     public void setBlockY(Double blockY) {
         this.blockY = blockY;
+    }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
     }
 }
