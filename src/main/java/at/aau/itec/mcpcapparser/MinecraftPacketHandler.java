@@ -8,7 +8,6 @@ import io.pkts.buffer.Buffer;
 import io.pkts.packet.Packet;
 import io.pkts.packet.TCPPacket;
 import io.pkts.protocol.Protocol;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,7 +23,13 @@ public class MinecraftPacketHandler implements PacketHandler {
     private static final String SERVER_IP = "143.205.122.57";
     private static final int SERVER_PORT = 25565;
 
+    private String outputFolder;
+
     private HashMap<String, ClientConnection> clients = new HashMap<>();
+
+    public MinecraftPacketHandler(String outputFolder) {
+        this.outputFolder = outputFolder;
+    }
 
     @Override
     public boolean nextPacket(Packet packet) throws IOException {
@@ -61,7 +66,7 @@ public class MinecraftPacketHandler implements PacketHandler {
                 String tcpIdentifier = clientIp + "-" + clientPort;
 
                 if (!clients.containsKey(tcpIdentifier)) {
-                    clients.put(tcpIdentifier, new ClientConnection(clientIp, tcpIdentifier));
+                    clients.put(tcpIdentifier, new ClientConnection(clientIp, tcpIdentifier, outputFolder));
 //                    System.out.println("Found new client, " + clientIp);
                 }
 

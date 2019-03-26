@@ -258,6 +258,7 @@ public class ClientConnection {
     private String ip;
     private String streamIdentifier;
     private int compressionThreshold = -1;
+    private String outputFolder;
     private PrintWriter writer;
 
     private byte[] serverboundCarryover = null;
@@ -267,11 +268,12 @@ public class ClientConnection {
 
     private ConnectionState connectionState = ConnectionState.HANDSHAKE;
 
-    public ClientConnection(String ip, String streamIdentifier) {
+    public ClientConnection(String ip, String streamIdentifier, String outputFolder) {
         this.ip = ip;
         this.streamIdentifier = streamIdentifier;
+        this.outputFolder = outputFolder;
         try {
-            this.writer = new PrintWriter(streamIdentifier + "_parsedPackets.log", "UTF-8");
+            this.writer = new PrintWriter(outputFolder + streamIdentifier + "_parsedPackets.log", "UTF-8");
             printCSVHeader();
         } catch (FileNotFoundException e) {
             e.printStackTrace();

@@ -13,14 +13,17 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 
 public class McPcapParser {
 
-    public static void main(String[] args) throws IOException {
+    private static Logger logger = LoggerFactory.getLogger(McPcapParser.class);
+
+    public static void main(String[] args) {
 
         ArgumentParser argumentParser = ArgumentParsers.newFor("McPcapParser").build()
                 .defaultHelp(true)
@@ -28,6 +31,9 @@ public class McPcapParser {
         argumentParser.addArgument("-p", "--pcapfile")
                 .required(true).type(String.class)
                 .help("PCAP File to process");
+        argumentParser.addArgument("-o", "--outputFolder")
+                .required(true).type(String.class)
+                .help("Folder for output files");
         Namespace ns = null;
         try {
             ns = argumentParser.parseArgs(args);
@@ -37,15 +43,44 @@ public class McPcapParser {
         }
 
         String pcapFilename = ns.getString("pcapfile");
-        final Pcap pcap = Pcap.openStream(pcapFilename);
+        String outputFolder = ns.getString("outputFolder");
+        Pcap pcap = null;
+        try {
+            pcap = Pcap.openStream(pcapFilename);
+        } catch (IOException e) {
+            logger.error(String.format("Error at opening PCAP File %s", pcapFilename), e);
+            System.exit(-1);
+        }
 
-        MinecraftPacketHandler handler = new MinecraftPacketHandler();
+        try {
+            outputFolder = createOutputFolder(outputFolder);
+        } catch (IOException e) {
+            logger.error(String.format("Error at creating output folder %s", outputFolder), e);
+            System.exit(-1);
+        }
 
-        pcap.loop(handler);
+        MinecraftPacketHandler handler = new MinecraftPacketHandler(outputFolder);
 
-        handler.printStats();
+        try {
+            pcap.loop(handler);
 
+            handler.printStats();
 
+        } catch (IOException e) {
+            logger.error(String.format("Error at parsing PCAP file", pcapFilename), e);
+        }
+
+    }
+
+    private static String createOutputFolder(String outputFolder) throws IOException {
+        if (!outputFolder.endsWith(File.separator)) {
+            outputFolder += File.separator;
+        }
+
+         if (!new File(outputFolder).mkdirs()) {
+             throw new IOException(String.format("Unable to create output folder %s", outputFolder));
+         }
+         return outputFolder;
     }
 
 }
