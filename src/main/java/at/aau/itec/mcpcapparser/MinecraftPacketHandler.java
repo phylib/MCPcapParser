@@ -1,6 +1,5 @@
 package at.aau.itec.mcpcapparser;
 
-import com.flowpowered.network.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.pkts.PacketHandler;
@@ -8,6 +7,8 @@ import io.pkts.buffer.Buffer;
 import io.pkts.packet.Packet;
 import io.pkts.packet.TCPPacket;
 import io.pkts.protocol.Protocol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -19,6 +20,8 @@ import java.util.HashMap;
  * @see ClientConnection
  */
 public class MinecraftPacketHandler implements PacketHandler {
+
+    private static Logger logger = LoggerFactory.getLogger(MinecraftPacketHandler.class);
 
     private static final String SERVER_IP = "143.205.122.57";
     private static final int SERVER_PORT = 25565;
@@ -107,7 +110,8 @@ public class MinecraftPacketHandler implements PacketHandler {
                 clientConnection.parsePackets();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            logger.warn("could not parse MC packet from TCP stream", e);
         }
     }
 }

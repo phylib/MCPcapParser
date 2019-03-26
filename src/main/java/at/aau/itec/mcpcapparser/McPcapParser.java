@@ -52,12 +52,7 @@ public class McPcapParser {
             System.exit(-1);
         }
 
-        try {
-            outputFolder = createOutputFolder(outputFolder);
-        } catch (IOException e) {
-            logger.error(String.format("Error at creating output folder %s", outputFolder), e);
-            System.exit(-1);
-        }
+        outputFolder = createOutputFolder(outputFolder);
 
         MinecraftPacketHandler handler = new MinecraftPacketHandler(outputFolder);
 
@@ -72,14 +67,12 @@ public class McPcapParser {
 
     }
 
-    private static String createOutputFolder(String outputFolder) throws IOException {
+    private static String createOutputFolder(String outputFolder) {
         if (!outputFolder.endsWith(File.separator)) {
             outputFolder += File.separator;
         }
 
-         if (!new File(outputFolder).mkdirs()) {
-             throw new IOException(String.format("Unable to create output folder %s", outputFolder));
-         }
+         new File(outputFolder).mkdirs();
          return outputFolder;
     }
 

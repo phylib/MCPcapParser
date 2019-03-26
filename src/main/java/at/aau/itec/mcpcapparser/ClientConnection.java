@@ -4,6 +4,8 @@ import com.flowpowered.network.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -17,6 +19,8 @@ import java.util.zip.Inflater;
  * list. The packets then contain entity, as well as spatial information.
  */
 public class ClientConnection {
+
+    private static Logger logger = LoggerFactory.getLogger(ClientConnection.class);
 
     public enum ConnectionState {
 
@@ -331,7 +335,7 @@ public class ClientConnection {
                 try {
                     size = ByteBufUtils.readVarInt(packet.getPayload());
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    logger.warn("Tried to read invalid VarInt");
                     parsingErrors++;
                     if (packet.isServerbound()) {
                         serverboundCarryover = null;
@@ -374,7 +378,7 @@ public class ClientConnection {
                     try {
                         uncompressedSize = ByteBufUtils.readVarInt(packet.getPayload());
                     } catch (IOException ex) {
-                        ex.printStackTrace();
+                        logger.warn("Tried to read invalid VarInt");
                         parsingErrors++;
                         if (packet.isServerbound()) {
                             serverboundCarryover = null;
@@ -441,7 +445,7 @@ public class ClientConnection {
 
                         int stringLen = ByteBufUtils.readVarInt(packet.getPayload());
                         String response = packet.getPayload().readCharSequence(stringLen, Charset.defaultCharset()).toString();
-                        System.out.println(response);
+                        // System.out.println(response);
 
                     } else if (!packet.isServerbound() && packetType == 0x01) {
                         // Clientbound pong
@@ -604,7 +608,8 @@ public class ClientConnection {
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            //ex.printStackTrace();
+            logger.warn("Invalid gzipped MC payload");
             error = true;
         } finally {
             try {
